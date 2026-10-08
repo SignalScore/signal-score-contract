@@ -1,112 +1,160 @@
-# Faucet Contract
+# SignalScore
 
-This is a token faucet smart contract on Soroban. It dispenses test tokens to users while enforcing a claim limit and a cooldown period between claims.
+Decentralized Governance, Moderation, and Asset Management Infrastructure on Stellar
 
-## Public Functions
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](Cargo.toml)
 
-### `initialize(env: Env, admin: Address, token: Address, claim_limit: i128, cooldown: u64)`
-Initializes the faucet contract with its settings.
-* **Parameters**:
-  * `env`: The execution environment.
-  * `admin`: The administrator address of the faucet.
-  * `token`: The address of the token to be dispensed.
-  * `claim_limit`: The maximum amount of tokens allowed per claim.
-  * `cooldown`: The cooldown period in seconds required between claims for a single user.
-* **Returns**: None.
+## Project Overview
 
-### `claim(env: Env, user: Address, amount: i128)`
-Allows a user to claim tokens from the faucet, up to the `claim_limit`, and enforces the `cooldown` period.
-* **Parameters**:
-  * `env`: The execution environment.
-  * `user`: The address claiming the tokens. Must have authorization.
-  * `amount`: The amount of tokens requested.
-* **Returns**: None.
+SignalScore is a programmable, on-chain community governance and asset management protocol built on the Stellar network using Soroban smart contracts. It enables communities and developers to secure digital assets in programmable vaults, manage decentralized content moderation and dispute resolution, and integrate off-chain price feeds via oracles, all while natively wrapping external assets for seamless cross-border utility.
 
----
+The system serves platforms needing robust infrastructure for secure on-chain token management, external data integration, and decentralized governance. Its main capabilities include securely vaulting tokens, providing on-chain oracle price snapshots, wrapping native Stellar assets 1:1 into Soroban-native tokens, dispensing testnet tokens via a faucet, and managing community content disputes through an on-chain moderation and appeal system.
 
-# Wrapped Token Contract
+## Table of Contents
 
-A mint/burn wrapper that turns an existing Soroban/Stellar asset (e.g. USDC) into a Soroban-native token. Users deposit the underlying asset and receive wrapped tokens 1:1 via `wrap`, and can redeem them back at any time via `unwrap`. The admin can additionally `mint` wrapped tokens directly and any holder can `burn` their own tokens.
+- [Project Overview](#project-overview)
+- [Key Features](#key-features)
+- [Built With / Technology Stack](#built-with--technology-stack)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running the Project](#running-the-project)
+- [Testing](#testing)
+- [Smart Contracts](#smart-contracts)
+- [License](#license)
 
-## Public Functions
+## Key Features
 
-### `initialize(env: Env, admin: Address, underlying: Address, name: String, symbol: String, decimals: u32)`
-Initializes the wrapper contract. Must be called exactly once after deployment.
-* **Parameters**:
-  * `env`: The execution environment.
-  * `admin`: Administrator address (permitted to call `mint`).
-  * `underlying`: Address of the existing Soroban token being wrapped (e.g. USDC contract address).
-  * `name`: Display name for the wrapped token (e.g. `"Wrapped USDC"`).
-  * `symbol`: Short ticker symbol for the wrapped token (e.g. `"wUSDC"`).
-  * `decimals`: Decimal precision — normally matches the underlying asset (7 for Stellar assets).
-* **Returns**: None.
+- **Token Vault:** Secure token storage with configurable parameters, user balances, spender allowances, and emergency pause/unpause functionality.
+- **Oracle:** On-chain price snapshot feeds featuring heartbeat freshness checks and a registry of authorized price-update signers.
+- **Wrapped Token:** A mint/burn wrapper that pegs 1:1 with underlying Soroban/Stellar assets, allowing deposits (`wrap`) and redemptions (`unwrap`), alongside admin minting.
+- **Content Moderation:** A decentralized flagging system where users can flag content, and designated moderators can review, approve, appeal, and resolve disputes.
+- **Faucet:** A token dispenser enforcing strict per-user claim limits and time-based cooldown periods.
+- **Web Frontend:** A Next.js-based web interface template ready for smart contract integration.
 
-### `wrap(env: Env, caller: Address, amount: i128) -> i128`
-Deposits `amount` of the underlying asset from `caller` into the contract and mints an equal amount of wrapped tokens to `caller` (1:1 peg). The caller must have authorized the transfer of the underlying asset.
-* **Parameters**:
-  * `env`: The execution environment.
-  * `caller`: Address performing the wrap. Must authorize this call.
-  * `amount`: Number of underlying tokens to deposit. Must be positive.
-* **Returns**: The new wrapped-token balance of `caller` after wrapping.
+## Built With / Technology Stack
 
-### `unwrap(env: Env, caller: Address, amount: i128) -> i128`
-Burns `amount` of wrapped tokens held by `caller` and returns an equal amount of the underlying asset (1:1 peg).
-* **Parameters**:
-  * `env`: The execution environment.
-  * `caller`: Address performing the unwrap. Must authorize this call.
-  * `amount`: Number of wrapped tokens to burn and redeem. Must be positive and ≤ caller's wrapped balance.
-* **Returns**: The new wrapped-token balance of `caller` after unwrapping.
+### Blockchain & Smart Contracts
+- **Stellar Network:** The underlying blockchain for deploying and executing the contracts.
+- **Soroban Smart Contracts:** The rust-based smart contract platform on Stellar.
+- **Rust:** The programming language used for all smart contract logic.
 
-### `mint(env: Env, admin: Address, recipient: Address, amount: i128)`
-Admin-only. Mints wrapped tokens directly to `recipient` without requiring a deposit of the underlying asset. Useful for incentive programs or testing.
-* **Parameters**:
-  * `env`: The execution environment.
-  * `admin`: The contract administrator. Must authorize this call.
-  * `recipient`: Address that receives the newly minted wrapped tokens.
-  * `amount`: Number of wrapped tokens to mint. Must be positive.
-* **Returns**: None.
+### Frontend
+- **Next.js:** The React framework used for the web application frontend.
+- **React:** The UI library for building the web interfaces.
+- **Tailwind CSS:** Utility-first CSS framework for frontend styling.
 
-### `burn(env: Env, caller: Address, amount: i128)`
-Permanently destroys `amount` of wrapped tokens held by `caller`. No underlying asset is returned — use `unwrap` if you want to reclaim the underlying.
-* **Parameters**:
-  * `env`: The execution environment.
-  * `caller`: Address whose wrapped tokens will be burned. Must authorize this call.
-  * `amount`: Number of wrapped tokens to burn. Must be positive and ≤ caller's wrapped balance.
-* **Returns**: None.
+## Project Structure
 
-### `balance(env: Env, account: Address) -> i128`
-Returns the wrapped-token balance of `account`.
-* **Parameters**:
-  * `env`: The execution environment.
-  * `account`: The address to query.
-* **Returns**: Balance as `i128` (0 for unknown accounts).
+```text
+.
+├── app/                  # Next.js frontend application pages and layouts
+├── src/                  # Rust source code for the Soroban smart contracts
+│   ├── errors.rs         # Contract error definitions
+│   ├── lib.rs            # Main entry points and Faucet contract implementation
+│   ├── moderation.rs     # Content moderation contract implementation
+│   ├── oracle.rs         # Oracle price feed contract implementation
+│   ├── storage.rs        # Token Vault storage and configurations
+│   ├── tests.rs          # Rust unit tests for the contracts
+│   ├── types.rs          # Custom data types for the contracts
+│   └── wrapped_token.rs  # Wrapped Token contract implementation
+├── Cargo.toml            # Rust workspace and dependency manifest
+├── package.json          # Node.js frontend dependencies and scripts
+└── next.config.mjs       # Next.js configuration
+```
 
-### `total_supply(env: Env) -> i128`
-Returns the total number of wrapped tokens currently in circulation.
-* **Parameters**:
-  * `env`: The execution environment.
-* **Returns**: Total supply as `i128`.
+## Prerequisites
 
-### `name(env: Env) -> String`
-Returns the human-readable name of the wrapped token (set at initialization).
-* **Parameters**:
-  * `env`: The execution environment.
-* **Returns**: Token name as a Soroban `String`.
+To build, test, and run this project, you will need the following tools installed:
 
-### `symbol(env: Env) -> String`
-Returns the ticker symbol of the wrapped token (set at initialization).
-* **Parameters**:
-  * `env`: The execution environment.
-* **Returns**: Token symbol as a Soroban `String`.
+- **Rust** and `cargo` (Latest stable version recommended)
+- **Node.js** (v18 or higher) and **npm**
+- **Stellar CLI / Soroban CLI** (For deploying and interacting with the contracts)
 
-### `decimals(env: Env) -> u32`
-Returns the decimal precision of the wrapped token (set at initialization).
-* **Parameters**:
-  * `env`: The execution environment.
-* **Returns**: Decimal places as `u32`.
+## Installation
 
-### `underlying(env: Env) -> Address`
-Returns the address of the underlying Soroban asset being wrapped.
-* **Parameters**:
-  * `env`: The execution environment.
-* **Returns**: The underlying token contract address.
+1. **Install Node.js dependencies for the frontend:**
+   ```bash
+   npm install
+   ```
+
+2. **Build the Rust smart contracts:**
+   ```bash
+   cargo build --target wasm32-unknown-unknown --release
+   ```
+
+## Running the Project
+
+### Frontend Development Server
+
+To run the Next.js web application locally:
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:3000`.
+
+### Frontend Production Build
+
+To build and start the Next.js application for production:
+
+```bash
+npm run build
+npm start
+```
+
+## Testing
+
+The smart contracts are unit-tested natively in Rust using the `soroban-sdk::testutils` framework.
+
+To run the smart contract test suite:
+
+```bash
+cargo test
+```
+
+## Smart Contracts
+
+The repository contains several distinct Soroban smart contracts located within the `src/` directory:
+
+### Faucet Contract (`src/lib.rs`)
+- **Purpose:** Dispenses test tokens to users.
+- **Important Entry Points:**
+  - `initialize(env, admin, token, claim_limit, cooldown)`
+  - `claim(env, user, amount)`
+
+### Wrapped Token Contract (`src/wrapped_token.rs`)
+- **Purpose:** Wraps existing Stellar/Soroban assets into a Soroban-native token (1:1 peg).
+- **Important Entry Points:**
+  - `initialize(env, admin, underlying, name, symbol, decimals)`
+  - `wrap(env, caller, amount)`
+  - `unwrap(env, caller, amount)`
+  - `mint(env, admin, recipient, amount)`
+  - `burn(env, caller, amount)`
+
+### Oracle Contract (`src/oracle.rs`)
+- **Purpose:** Provides on-chain price snapshots with a heartbeat freshness window.
+- **Important Entry Points:**
+  - `init(env, admin, heartbeat)`
+  - `add_signer(env, admin, signer)`
+  - `set_price(env, signer, asset, price)`
+  - `get_price(env, asset)`
+
+### Token Vault Contract (`src/storage.rs`)
+- **Purpose:** Securely vaults tokens and manages user allowances and balances.
+- **Configuration:** Features an emergency pause/unpause mechanism controlled by the admin.
+
+### Moderation Contract (`src/moderation.rs`)
+- **Purpose:** On-chain dispute and content moderation tracking.
+- **Important Entry Points:**
+  - `initialize_moderation`
+  - `add_moderator`
+  - `flag_content`
+  - `review_flag`
+  - `appeal_flag`
+  - `resolve_appeal`
+
+## License
+
+This project is licensed under the MIT License. See the [Cargo.toml](Cargo.toml) file for license details.
